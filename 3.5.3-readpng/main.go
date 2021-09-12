@@ -7,31 +7,36 @@ import (
 	"os"
 )
 
-// io.SectionReader は Read すると Seek する
-func dumpChunk(c *io.SectionReader) error {
+func dumpChunk(c io.Reader) error {
 	var length int32
+	// 普通 io.Reader は Read で Seek するはずなので
+	// Read する度に読み取るバイト位置が移動していく
 	err := binary.Read(c, binary.BigEndian, &length)
 	if err != nil {
 		return fmt.Errorf("Read error: %w", err)
 	}
+
 	buff := make([]byte, 4)
-	// SectionReader 型として一度 binary.Read して
-	// Seek 済なので、このコードは問題ないはず
-	// c が io.Reader だと Seek が保証できない
-	_, err = c.Read(buff)
+	// ReadAt は 4 バイト読み取れないとエラーを返すけど
+	// Read はエラーを返さないので、自分で読み取ったバイト数を調べる必要がある
+	n, err := c.Read(buff)
 	if err != nil {
 		return fmt.Errorf("Read error: %w", err)
 	}
+	if n != len(buff) {
+		return fmt.Errorf("Read error: got %v bytes", n)
+	}
+
 	fmt.Printf("chunk %q (%v bytes)\n", string(buff), length)
 	return nil
 }
 
-func readChunks(f *os.File) ([]*io.SectionReader, error) {
+func readChunks(f *os.File) ([]io.Reader, error) {
 	if _, err := f.Seek(8, io.SeekStart); err != nil {
 		return nil, fmt.Errorf("Seek error: %w", err)
 	}
 
-	rs := make([]*io.SectionReader, 0)
+	rs := make([]io.Reader, 0)
 	var offset int64 = 8
 	for {
 		var length int32
@@ -43,11 +48,10 @@ func readChunks(f *os.File) ([]*io.SectionReader, error) {
 			return nil, fmt.Errorf("Read error: %w", err)
 		}
 
-		// NewSectionReader では f が Seek されていても offset から Read される
+		// NewSectionReader では f が既に Seek されていても offset から Read される
 		rs = append(rs, io.NewSectionReader(f, offset, int64(length+12)))
 
-		// 現在位置は長さを読み終わった箇所なので
-		// 次のチャンクの先頭に移動
+		// 現在位置は長さを読み終わった箇所なので、次のチャンクの先頭に移動
 		offset, err = f.Seek(int64(length+8), io.SeekCurrent)
 	}
 	return rs, nil
