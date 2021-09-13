@@ -61,7 +61,11 @@ func readChunks(f *os.File) ([]io.Reader, error) {
 }
 
 func main() {
-	f, err := os.Open("dog.png")
+	if len(os.Args) != 2 {
+		panic("len(Args) != 2")
+	}
+
+	f, err := os.Open(os.Args[1])
 	if err != nil {
 		panic(err)
 	}
