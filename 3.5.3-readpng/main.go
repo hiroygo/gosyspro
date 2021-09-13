@@ -53,6 +53,9 @@ func readChunks(f *os.File) ([]io.Reader, error) {
 
 		// 現在位置は長さを読み終わった箇所なので、次のチャンクの先頭に移動
 		offset, err = f.Seek(int64(length+8), io.SeekCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("Seek error: %w", err)
+		}
 	}
 	return rs, nil
 }
