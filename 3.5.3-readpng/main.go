@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -28,6 +29,15 @@ func dumpChunk(c io.Reader) error {
 	}
 
 	fmt.Printf("chunk %q (%v bytes)\n", string(buff), length)
+
+	if bytes.Equal(buff, []byte("tEXt")) {
+		rawText := make([]byte, length)
+		if _, err := c.Read(rawText); err != nil {
+			return fmt.Errorf("Read error: %w", err)
+		}
+		fmt.Println(string(rawText))
+	}
+
 	return nil
 }
 
