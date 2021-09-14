@@ -94,7 +94,7 @@ func copyPNGWithTextChunk(src, dest, text string) error {
 		return fmt.Errorf("Copy error: %w", err)
 	}
 	// テキストチャンクを追加
-	tc, err := textChunk("I LOVE DOG")
+	tc, err := textChunk(text)
 	if err != nil {
 		return fmt.Errorf("textChunk error: %w", err)
 	}
