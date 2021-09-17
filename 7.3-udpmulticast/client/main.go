@@ -11,6 +11,9 @@ func main() {
 		panic(err)
 	}
 	conn, err := net.ListenMulticastUDP("udp", nil, addr)
+	if err != nil {
+		panic(err)
+	}
 	defer conn.Close()
 	buff := make([]byte, 1500)
 	for {
